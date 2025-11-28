@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Chatbot</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c); background-size: 400% 400%; animation: gradientShift 15s ease infinite; overflow: hidden; }
+        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .particle { position: absolute; width: 4px; height: 4px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: float 6s infinite linear; }
+        .header { background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); color: white; padding: 25px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.1); position: relative; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .header h1 { margin: 0; font-size: 1.8em; font-weight: 300; text-shadow: 0 2px 10px rgba(0,0,0,0.3); animation: glow 2s ease-in-out infinite alternate; }
+        .chat { flex: 1; padding: 25px; overflow-y: auto; background: rgba(255,255,255,0.08); position: relative; z-index: 10; }
+        .message { margin: 20px 0; padding: 15px 20px; border-radius: 20px; max-width: 75%; animation: messageSlide 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 8px 25px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
+        .message::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); animation: shimmer 2s infinite; }
+        .user { background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin-left: auto; transform: translateX(0); }
+        .user::after { content: ''; position: absolute; top: 50%; right: -10px; width: 0; height: 0; border: 10px solid transparent; border-left-color: #667eea; transform: translateY(-50%); }
+        .bot { background: rgba(255,255,255,0.95); color: #333; border: 1px solid rgba(255,255,255,0.3); }
+        .bot::after { content: ''; position: absolute; top: 50%; left: -10px; width: 0; height: 0; border: 10px solid transparent; border-right-color: rgba(255,255,255,0.95); transform: translateY(-50%); }
+        .typing { background: rgba(255,255,255,0.9); color: #666; font-style: italic; }
+        .input-area { display: flex; padding: 25px; background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); gap: 15px; position: relative; z-index: 10; border-top: 1px solid rgba(255,255,255,0.2); }
+        input { flex: 1; padding: 15px 20px; border: none; border-radius: 30px; background: rgba(255,255,255,0.9); outline: none; font-size: 15px; transition: all 0.3s ease; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1); }
+        input:focus { box-shadow: 0 0 20px rgba(255,255,255,0.5), inset 0 2px 10px rgba(0,0,0,0.1); transform: scale(1.02); }
+        button { padding: 15px 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
+        button::before { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; background: rgba(255,255,255,0.3); border-radius: 50%; transition: all 0.3s ease; transform: translate(-50%, -50%); }
+        button:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        button:hover::before { width: 300px; height: 300px; }
+        button:active { transform: translateY(-1px) scale(1.02); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes float { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-100px) rotate(360deg); opacity: 0; } }
+        @keyframes messageSlide { from { opacity: 0; transform: translateY(30px) scale(0.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
+        @keyframes glow { from { text-shadow: 0 2px 10px rgba(0,0,0,0.3); } to { text-shadow: 0 2px 20px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.3); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .typing-dots { animation: pulse 1.5s infinite; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    <div class="header">
+        <h1>🤖 AI Assistant</h1>
+    </div>
+    <div class="chat" id="chat"></div>
+    <div class="input-area">
+        <input id="input" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        function addMessage(text, isUser, isTyping = false) {
+            const chat = document.getElementById('chat');
+            const div = document.createElement('div');
+            div.className = `message ${isUser ? 'user' : 'bot'} ${isTyping ? 'typing typing-dots' : ''}`;
+            div.textContent = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+            return div;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('input');
+            const button = document.querySelector('button');
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            input.value = '';
+            button.disabled = true;
+            
+            const typingMsg = addMessage('AI is thinking...', false, true);
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+                const data = await response.json();
+                typingMsg.remove();
+                addMessage(data.reply, false);
+            } catch {
+                typingMsg.remove();
+                addMessage('❌ Connection error. Please try again.', false);
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // Create floating particles
+        function createParticles() {
+            const particles = document.getElementById('particles');
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particles.appendChild(particle);
+            }
+        }
+        
+        createParticles();
+        addMessage('👋 Hello! I\'m your AI assistant. How can I help you today?', false);
+    </script>
+</body>
+</html>
