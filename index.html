@@ -1,80 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>AI Chatbot</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IntelliChat Pro - AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c); background-size: 400% 400%; animation: gradientShift 15s ease infinite; overflow: hidden; }
-        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-        .particle { position: absolute; width: 4px; height: 4px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: float 6s infinite linear; }
-        .header { background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); color: white; padding: 25px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.1); position: relative; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.2); }
-        .header h1 { margin: 0; font-size: 1.8em; font-weight: 300; text-shadow: 0 2px 10px rgba(0,0,0,0.3); animation: glow 2s ease-in-out infinite alternate; }
-        .chat { flex: 1; padding: 25px; overflow-y: auto; background: rgba(255,255,255,0.08); position: relative; z-index: 10; }
-        .message { margin: 20px 0; padding: 15px 20px; border-radius: 20px; max-width: 75%; animation: messageSlide 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); box-shadow: 0 8px 25px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
-        .message::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent); animation: shimmer 2s infinite; }
-        .user { background: linear-gradient(135deg, #667eea, #764ba2); color: white; margin-left: auto; transform: translateX(0); }
-        .user::after { content: ''; position: absolute; top: 50%; right: -10px; width: 0; height: 0; border: 10px solid transparent; border-left-color: #667eea; transform: translateY(-50%); }
-        .bot { background: rgba(255,255,255,0.95); color: #333; border: 1px solid rgba(255,255,255,0.3); }
-        .bot::after { content: ''; position: absolute; top: 50%; left: -10px; width: 0; height: 0; border: 10px solid transparent; border-right-color: rgba(255,255,255,0.95); transform: translateY(-50%); }
-        .typing { background: rgba(255,255,255,0.9); color: #666; font-style: italic; }
-        .input-area { display: flex; padding: 25px; background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); gap: 15px; position: relative; z-index: 10; border-top: 1px solid rgba(255,255,255,0.2); }
-        input { flex: 1; padding: 15px 20px; border: none; border-radius: 30px; background: rgba(255,255,255,0.9); outline: none; font-size: 15px; transition: all 0.3s ease; box-shadow: inset 0 2px 10px rgba(0,0,0,0.1); }
-        input:focus { box-shadow: 0 0 20px rgba(255,255,255,0.5), inset 0 2px 10px rgba(0,0,0,0.1); transform: scale(1.02); }
-        button { padding: 15px 30px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.2); position: relative; overflow: hidden; }
-        button::before { content: ''; position: absolute; top: 50%; left: 50%; width: 0; height: 0; background: rgba(255,255,255,0.3); border-radius: 50%; transition: all 0.3s ease; transform: translate(-50%, -50%); }
-        button:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
-        button:hover::before { width: 300px; height: 300px; }
-        button:active { transform: translateY(-1px) scale(1.02); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-        @keyframes float { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-100px) rotate(360deg); opacity: 0; } }
-        @keyframes messageSlide { from { opacity: 0; transform: translateY(30px) scale(0.8); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes shimmer { 0% { left: -100%; } 100% { left: 100%; } }
-        @keyframes glow { from { text-shadow: 0 2px 10px rgba(0,0,0,0.3); } to { text-shadow: 0 2px 20px rgba(255,255,255,0.5), 0 0 30px rgba(255,255,255,0.3); } }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .typing-dots { animation: pulse 1.5s infinite; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f8fafc; color: #1e293b; height: 100vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 1.5rem 2rem; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15); }
+        .header-content { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
+        .logo { width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .header-text h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .header-text p { font-size: 0.875rem; opacity: 0.9; font-weight: 400; }
+        .chat-container { flex: 1; max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; background: white; box-shadow: 0 0 40px rgba(0,0,0,0.08); }
+        .chat { flex: 1; padding: 2rem; overflow-y: auto; background: #ffffff; }
+        .message { margin: 1.5rem 0; display: flex; gap: 1rem; animation: slideIn 0.3s ease-out; }
+        .message.user { flex-direction: row-reverse; }
+        .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: 600; flex-shrink: 0; }
+        .avatar.user { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; }
+        .avatar.bot { background: #f1f5f9; color: #64748b; }
+        .message-content { max-width: 70%; padding: 1rem 1.25rem; border-radius: 1rem; position: relative; line-height: 1.6; white-space: pre-wrap; }
+        .message-content strong { font-weight: 600; }
+        .message-content ul { margin: 0.5rem 0; padding-left: 1.5rem; }
+        .message-content li { margin: 0.25rem 0; }
+        .message-content code { background: rgba(0,0,0,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em; }
+        .message-content pre { background: #f1f5f9; padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 0.5rem 0; }
+        .message-content h1, .message-content h2, .message-content h3 { margin: 0.5rem 0; font-weight: 600; }
+        .message-content p { margin: 0.5rem 0; }
+        .message.user .message-content { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border-bottom-right-radius: 0.25rem; }
+        .message.bot .message-content { background: #f8fafc; border: 1px solid #e2e8f0; color: #334155; border-bottom-left-radius: 0.25rem; }
+        .typing { opacity: 0.7; }
+        .typing::after { content: ''; display: inline-block; width: 4px; height: 1em; background: #64748b; margin-left: 4px; animation: blink 1s infinite; }
+        .input-area { padding: 1.5rem 2rem; background: #f8fafc; border-top: 1px solid #e2e8f0; }
+        .input-container { max-width: 1200px; margin: 0 auto; display: flex; gap: 1rem; align-items: end; }
+        .input-wrapper { flex: 1; position: relative; }
+        input { width: 100%; padding: 1rem 1.25rem; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 1rem; background: white; transition: all 0.2s ease; resize: none; font-family: inherit; }
+        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .send-btn { padding: 1rem 1.5rem; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem; }
+        .send-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3); }
+        .send-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .welcome { text-align: center; padding: 3rem 2rem; color: #64748b; }
+        .welcome h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #1e293b; }
+        .welcome p { font-size: 1rem; margin-bottom: 2rem; }
+        .suggestions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .suggestion { padding: 0.75rem 1.25rem; background: white; border: 2px solid #e2e8f0; border-radius: 25px; cursor: pointer; transition: all 0.2s ease; font-size: 0.875rem; }
+        .suggestion:hover { border-color: #3b82f6; background: #f0f9ff; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        @media (max-width: 768px) { .header { padding: 1rem; } .chat { padding: 1rem; } .input-area { padding: 1rem; } .message-content { max-width: 85%; } .suggestions { flex-direction: column; align-items: center; } }
     </style>
 </head>
 <body>
-    <div class="particles" id="particles"></div>
     <div class="header">
-        <h1>🤖 AI Assistant</h1>
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="header-text">
+                <h1>IntelliChat Pro</h1>
+                <p>Advanced AI Assistant powered by Gemini</p>
+            </div>
+        </div>
     </div>
-    <div class="chat" id="chat"></div>
-    <div class="input-area">
-        <input id="input" placeholder="Type your message..." onkeypress="if(event.key==='Enter') sendMessage()">
-        <button onclick="sendMessage()">Send</button>
+    
+    <div class="chat-container">
+        <div class="chat" id="chat">
+            <div class="welcome" id="welcome">
+                <h2>Welcome to IntelliChat Pro</h2>
+                <p>Your intelligent AI assistant is ready to help with any questions or tasks.</p>
+                <div class="suggestions">
+                    <div class="suggestion" onclick="sendSuggestion('Explain quantum computing')">Explain quantum computing</div>
+                    <div class="suggestion" onclick="sendSuggestion('Write a Python function')">Write a Python function</div>
+                    <div class="suggestion" onclick="sendSuggestion('Plan a project timeline')">Plan a project timeline</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="input-container">
+                <div class="input-wrapper">
+                    <input id="input" placeholder="Ask me anything..." onkeypress="if(event.key==='Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }">
+                </div>
+                <button class="send-btn" onclick="sendMessage()" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                    Send
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
         function addMessage(text, isUser, isTyping = false) {
             const chat = document.getElementById('chat');
-            const div = document.createElement('div');
-            div.className = `message ${isUser ? 'user' : 'bot'} ${isTyping ? 'typing typing-dots' : ''}`;
-            div.textContent = text;
-            chat.appendChild(div);
+            const welcome = document.getElementById('welcome');
+            if (welcome) welcome.style.display = 'none';
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = `avatar ${isUser ? 'user' : 'bot'}`;
+            avatar.innerHTML = isUser ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+            
+            const content = document.createElement('div');
+            content.className = `message-content ${isTyping ? 'typing' : ''}`;
+            content.innerHTML = formatMessage(text);
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(content);
+            chat.appendChild(messageDiv);
             chat.scrollTop = chat.scrollHeight;
-            return div;
+            return messageDiv;
+        }
+        
+        function formatMessage(text) {
+            // Handle markdown-style formatting
+            let formatted = text
+                // Bold text **text**
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Code blocks ```code```
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                // Inline code `code`
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                // Headers ### Header
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                // Lists with - or *
+                .replace(/^[\s]*[-\*]\s+(.*)$/gm, '<li>$1</li>')
+                // Wrap consecutive <li> elements in <ul>
+                .replace(/(<li>.*<\/li>)/gs, function(match) {
+                    return '<ul>' + match + '</ul>';
+                })
+                // Line breaks
+                .replace(/\n/g, '<br>');
+            
+            return formatted;
+        }
+        
+        function sendSuggestion(text) {
+            document.getElementById('input').value = text;
+            sendMessage();
         }
 
         async function sendMessage() {
             const input = document.getElementById('input');
-            const button = document.querySelector('button');
+            const sendBtn = document.getElementById('sendBtn');
             const message = input.value.trim();
             if (!message) return;
 
             addMessage(message, true);
             input.value = '';
-            button.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending';
             
-            const typingMsg = addMessage('AI is thinking...', false, true);
+            const typingMsg = addMessage('Thinking...', false, true);
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/chat', {
+                const response = await fetch('https://aichatbot-s2fl.onrender.com/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message })
@@ -82,29 +171,18 @@
                 const data = await response.json();
                 typingMsg.remove();
                 addMessage(data.reply, false);
-            } catch {
+            } catch (error) {
                 typingMsg.remove();
-                addMessage('❌ Connection error. Please try again.', false);
+                addMessage('I apologize, but I\'m experiencing connection issues. Please try again in a moment.', false);
             } finally {
-                button.disabled = false;
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+                input.focus();
             }
         }
 
-        // Create floating particles
-        function createParticles() {
-            const particles = document.getElementById('particles');
-            for (let i = 0; i < 50; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 6 + 's';
-                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
-                particles.appendChild(particle);
-            }
-        }
-        
-        createParticles();
-        addMessage('👋 Hello! I\'m your AI assistant. How can I help you today?', false);
+        // Initialize
+        document.getElementById('input').focus();
     </script>
 </body>
 </html>
