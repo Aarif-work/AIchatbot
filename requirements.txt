@@ -4,3 +4,4 @@ python-dotenv
 langchain-google-genai
 requests
 beautifulsoup4
+aiohttp==3.10.10
