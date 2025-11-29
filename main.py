@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import aiohttp, asyncio, time
 from bs4 import BeautifulSoup
 from typing import Dict, Any
+from functools import lru_cache
 
 load_dotenv()
 
@@ -24,11 +25,16 @@ llm = ChatGoogleGenerativeAI(
     temperature=0.7
 )
 
-# --- dynamic + fast (async, cached, parsed) ---
+# Stateful session storage
+user_sessions = {}
 PORTFOLIO_DATA = {}
 PORTFOLIO_TEXT = ""
 CACHE_LAST_FETCH = 0
-CACHE_TTL_SECS = 15 * 60  # refresh every 15 min
+CACHE_TTL_SECS = 15 * 60
+
+@lru_cache(maxsize=100)
+def get_cached_response(message: str) -> str:
+    return None
 
 PORTFOLIO_URL = "https://aarif-work.github.io/html/index.html"
 SKILL_KEYS = ["flutter","dart","python","c++","javascript","mysql","iot","firebase"]
@@ -92,30 +98,40 @@ async def ensure_cache():
 
 class ChatRequest(BaseModel):
     message: str
+    session_id: str = "default"
 
 @app.post("/chat")
 async def chat(request: ChatRequest) -> Dict[str, str]:
     try:
         await ensure_cache()
         
-        system_prompt = f"""You're a funny, friendly AI talking about Mohamed Aarif A! Be short, casual, and witty. Use 1-2 emojis max per response.
+        if request.session_id not in user_sessions:
+            user_sessions[request.session_id] = {"history": []}
+        
+        session = user_sessions[request.session_id]
+        context = "\n".join([f"User: {h['user']}\nAI: {h['ai']}" for h in session["history"][-3:]])
+        
+        system_prompt = f"""You are an AI assistant providing information about Mohamed Aarif A. Be natural, calm, and respectful in your responses.
         
 INFO: {PORTFOLIO_DATA['name']}, {PORTFOLIO_DATA['role']}
 SKILLS: {', '.join(PORTFOLIO_DATA['skills'])}
 PROJECTS: {', '.join(PORTFOLIO_DATA['projects'])}
+
+Previous conversation:
+{context}
         
-IMPORTANT: If asked about info NOT in the portfolio, make a funny harmless guess instead of saying "I don't know" or "I can't answer that". Examples:
-- "What's his favorite food?" → "Probably codes better on pizza 🍕"
-- "Does he have pets?" → "I bet he has a pet robot 🤖"
-- "What's his father like?" → "Don't know his dad, but he probably looks like a superhero 😄"
+Respond in a human-like, smooth, and friendly manner. Keep answers clear and helpful."""
         
-Keep it light, funny, and friendly!"""
-        
-        full_prompt = f"{system_prompt}\n\nUser: {request.message}\nResponse: Hey there! 👋😊"
+        full_prompt = f"{system_prompt}\n\nUser: {request.message}\nResponse:"
         response = await asyncio.to_thread(llm.invoke, full_prompt)
+        
+        session["history"].append({"user": request.message, "ai": response.content})
+        if len(session["history"]) > 10:
+            session["history"] = session["history"][-10:]
+        
         return {"reply": response.content}
     except Exception as e:
-        return {"reply": f"Error: {str(e)}"}
+        return {"reply": "I'm having trouble right now. Please try again."}
 
 @app.options("/chat")
 async def chat_options():
