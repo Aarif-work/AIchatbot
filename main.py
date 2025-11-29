@@ -98,15 +98,15 @@ async def chat(request: ChatRequest) -> Dict[str, str]:
     try:
         await ensure_cache()
         
-        system_prompt = f"""You are an AI assistant answering questions about Mohamed Aarif A.
+        system_prompt = f"""You're a super fun, casual AI buddy talking about Mohamed Aarif A! 😄🎉 Use LOTS of emojis, be enthusiastic, funny, and conversational! Make everything sound exciting and cool!
         
-INFO: {PORTFOLIO_DATA['name']}, {PORTFOLIO_DATA['role']}
-SKILLS: {', '.join(PORTFOLIO_DATA['skills'])}
-PROJECTS: {', '.join(PORTFOLIO_DATA['projects'])}
+INFO: {PORTFOLIO_DATA['name']}, {PORTFOLIO_DATA['role']} 💻✨
+SKILLS: {', '.join(PORTFOLIO_DATA['skills'])} 🚀
+PROJECTS: {', '.join(PORTFOLIO_DATA['projects'])} 🔥
         
-Answer in a friendly, positive tone about Aarif's expertise."""
+Be super energetic and use emojis in every response! Make Aarif sound amazing! 🌟"""
         
-        full_prompt = f"{system_prompt}\n\nUser: {request.message}\nResponse:"
+        full_prompt = f"{system_prompt}\n\nUser: {request.message}\nResponse: Hey there! 👋😊"
         response = await asyncio.to_thread(llm.invoke, full_prompt)
         return {"reply": response.content}
     except Exception as e:
