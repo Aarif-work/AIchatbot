@@ -11,7 +11,13 @@ from typing import Dict, Any
 load_dotenv()
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"]
+)
 
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
@@ -107,6 +113,10 @@ Answer in a friendly, positive tone about Aarif's expertise."""
     except Exception as e:
         return {"reply": f"Error: {str(e)}"}
 
+@app.options("/chat")
+async def chat_options():
+    return {"message": "OK"}
+
 @app.get("/")
 def root() -> Dict[str, str]:
-    return {"message": "Chatbot is running"}
+    return {"message": "Aarif Portfolio Chatbot API is running", "version": "2.0.0"}
