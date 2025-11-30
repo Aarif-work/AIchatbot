@@ -1,4 +1,4 @@
-# Aarif Portfolio Chatbot API v2.0
+# Ask About Aarif - Stateful AI Assistant API v2.0
 
 ## Base URL
 ```
@@ -6,14 +6,12 @@ https://aichatbot-s2fl.onrender.com
 ```
 
 ## Features
+- 🧠 **Stateful Conversations**: Remembers context across messages
 - ⚡ **Ultra-Fast**: ~200-500ms response time with smart caching
 - 🔄 **Dynamic Data**: Auto-refreshes portfolio every 15 minutes
 - 🤖 **AI-Powered**: Google Gemini 2.0 Flash integration
 - 📊 **Real-time Portfolio**: Live data from https://aarif-work.github.io
-
-## Interactive Documentation
-- **Swagger UI**: [/docs](https://aichatbot-s2fl.onrender.com/docs)
-- **ReDoc**: [/redoc](https://aichatbot-s2fl.onrender.com/redoc)
+- 💬 **Session Management**: Individual conversation threads per user
 
 ## Endpoints
 
@@ -41,9 +39,12 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-  "message": "What are Aarif's Flutter development skills?"
+  "message": "What are Aarif's Flutter development skills?",
+  "session_id": "user123"
 }
 ```
+
+**Note**: `session_id` is optional. If not provided, defaults to "default". Use unique session IDs to maintain separate conversations.
 
 **Response:**
 ```json
@@ -80,28 +81,46 @@ Content-Type: application/json
 
 ## Usage Examples
 
-### JavaScript (Fetch) - Portfolio Chat
+### JavaScript (Fetch) - Stateful Chat
 ```javascript
-async function chatWithAarif(message) {
-    try {
-        const response = await fetch('https://aichatbot-s2fl.onrender.com/chat', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ message })
-        });
-        
-        const data = await response.json();
-        return data.reply;
-    } catch (error) {
-        return 'Connection error';
+class AarifChatBot {
+    constructor(sessionId = 'default') {
+        this.sessionId = sessionId;
+        this.baseUrl = 'https://aichatbot-s2fl.onrender.com';
+    }
+    
+    async chat(message) {
+        try {
+            const response = await fetch(`${this.baseUrl}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    message, 
+                    session_id: this.sessionId 
+                })
+            });
+            
+            const data = await response.json();
+            return data.reply;
+        } catch (error) {
+            return 'Connection error';
+        }
     }
 }
 
-// Usage Examples
-chatWithAarif("What programming languages does Aarif know?").then(reply => console.log(reply));
-chatWithAarif("Tell me about Aarif's projects").then(reply => console.log(reply));
+// Usage Examples - Stateful Conversation
+const bot = new AarifChatBot('user123');
+
+// First message
+bot.chat("Hi, who is Aarif?").then(reply => console.log(reply));
+
+// Follow-up (remembers context)
+bot.chat("What are his main skills?").then(reply => console.log(reply));
+
+// Another follow-up
+bot.chat("Tell me more about his projects").then(reply => console.log(reply));
 
 // Get Portfolio Data
 async function getPortfolioData() {
@@ -110,42 +129,56 @@ async function getPortfolioData() {
 }
 ```
 
-### Python (requests)
+### Python (requests) - Stateful Chat
 ```python
 import requests
+import uuid
 
-def chat_with_aarif(message):
-    url = "https://aichatbot-s2fl.onrender.com/chat"
-    payload = {"message": message}
+class AarifChatBot:
+    def __init__(self, session_id=None):
+        self.session_id = session_id or str(uuid.uuid4())
+        self.base_url = "https://aichatbot-s2fl.onrender.com"
     
-    try:
-        response = requests.post(url, json=payload)
-        return response.json()["reply"]
-    except:
-        return "Connection error"
+    def chat(self, message):
+        url = f"{self.base_url}/chat"
+        payload = {
+            "message": message,
+            "session_id": self.session_id
+        }
+        
+        try:
+            response = requests.post(url, json=payload)
+            return response.json()["reply"]
+        except:
+            return "Connection error"
 
-def get_portfolio_data():
-    url = "https://aichatbot-s2fl.onrender.com/portfolio"
-    try:
-        response = requests.get(url)
-        return response.json()
-    except:
-        return {"error": "Connection error"}
+# Usage Examples - Stateful Conversation
+bot = AarifChatBot('user456')
 
-# Usage Examples
-reply = chat_with_aarif("What are Aarif's Flutter skills?")
-print(reply)
+# First message
+reply1 = bot.chat("Hi, tell me about Aarif")
+print(f"Bot: {reply1}")
 
-portfolio = get_portfolio_data()
-print(f"Skills: {portfolio['data']['skills']}")
+# Follow-up (remembers context)
+reply2 = bot.chat("What programming languages does he know?")
+print(f"Bot: {reply2}")
+
+# Another follow-up
+reply3 = bot.chat("Tell me about his IoT projects")
+print(f"Bot: {reply3}")
 ```
 
 ### cURL
 ```bash
-# Chat with portfolio assistant
+# Chat with stateful assistant
 curl -X POST "https://aichatbot-s2fl.onrender.com/chat" \
   -H "Content-Type: application/json" \
-  -d '{"message": "What projects has Aarif worked on?"}'
+  -d '{"message": "What projects has Aarif worked on?", "session_id": "curl_user"}'
+
+# Follow-up in same session
+curl -X POST "https://aichatbot-s2fl.onrender.com/chat" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Tell me more about the IoT project", "session_id": "curl_user"}'
 
 # Get portfolio data
 curl -X GET "https://aichatbot-s2fl.onrender.com/portfolio"
@@ -229,33 +262,47 @@ echo "Skills: " . implode(', ', $portfolio['data']['skills']);
 ?>
 ```
 
-## Performance & Caching
+## Stateful Features
 
-### Response Times
+### Session Management
+- **Session Storage**: In-memory conversation history per session
+- **Context Window**: Remembers last 3 exchanges per session
+- **Memory Limit**: Keeps last 10 exchanges, auto-cleanup older messages
+- **Session Isolation**: Each `session_id` maintains separate conversation thread
+
+### Performance & Caching
 - **Cached responses**: ~200-500ms
 - **First call/cache miss**: ~1-2 seconds
 - **Portfolio refresh**: Every 15 minutes automatically
-
-### Cache Status
-Check `/portfolio` endpoint for cache information:
-- `cache_age_seconds`: How old the current data is
-- `next_refresh_in`: Seconds until next auto-refresh
+- **Response caching**: Identical questions cached with `@lru_cache`
 
 ## Integration Tips
 
-1. **Error Handling**: Always wrap API calls in try-catch blocks
-2. **Performance**: First call may be slower due to portfolio fetching
-3. **Caching**: Data is automatically cached and refreshed
-4. **CORS**: API supports CORS for web applications
-5. **Async**: All endpoints are async-optimized
+1. **Session Management**: Use unique `session_id` for each user/conversation
+2. **Error Handling**: Always wrap API calls in try-catch blocks
+3. **Performance**: First call may be slower due to portfolio fetching
+4. **Context Awareness**: AI remembers recent conversation in same session
+5. **Memory Management**: Sessions auto-cleanup after 10 exchanges
+6. **CORS**: API supports CORS for web applications
+7. **Async**: All endpoints are async-optimized
 
-## Sample Questions
-Try these example questions with the chat endpoint:
+## Sample Conversations
+Try these example conversations to test stateful functionality:
+
+**Conversation 1:**
+1. "Hi, who is Aarif?"
+2. "What are his main skills?" (AI remembers context)
+3. "Tell me more about his Flutter experience" (Continues context)
+
+**Conversation 2:**
+1. "Tell me about Aarif's projects"
+2. "Which one is the most innovative?" (References previous answer)
+3. "How does it work?" (Continues discussing the project)
+
+**Individual Questions:**
 - "What programming languages does Aarif know?"
-- "Tell me about Aarif's Flutter projects"
-- "What is Aarif's experience with IoT?"
-- "Describe Aarif's technical skills"
-- "What projects has Aarif worked on?"
+- "Describe Aarif's IoT experience"
+- "What is his educational background?"
 
 ## Response Formatting
 The AI returns responses that may include:
@@ -271,8 +318,8 @@ The AI returns responses that may include:
 
 ## API Versioning
 - **Current Version**: 2.0.0
-- **Breaking Changes**: None from v1.x
-- **New Features**: Portfolio endpoint, enhanced caching, async optimization
+- **Breaking Changes**: Added optional `session_id` parameter
+- **New Features**: Stateful conversations, session management, conversation history, response caching, async optimization
 
 ## Support
 For issues or questions:
