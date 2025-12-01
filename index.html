@@ -68,7 +68,6 @@
             </div>
         </div>
     </div>
-    
     <div class="chat-container">
         <div class="chat" id="chat">
             <div class="welcome" id="welcome">
@@ -119,7 +118,15 @@
             return messageDiv;
         }
         
+        function decodeHtmlEntities(text) {
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = text;
+            return textarea.value;
+        }
+        
         function formatMessage(text) {
+            // Decode HTML entities first
+            text = decodeHtmlEntities(text);
             // Handle markdown-style formatting
             let formatted = text
                 // Bold text **text**
