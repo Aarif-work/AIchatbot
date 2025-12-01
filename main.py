@@ -5,9 +5,8 @@ from pydantic import BaseModel
 from langchain_google_genai import ChatGoogleGenerativeAI
 import os
 from dotenv import load_dotenv
-import aiohttp, asyncio, time
-from bs4 import BeautifulSoup
-from typing import Dict, Any
+import asyncio, time
+from typing import Dict
 import hashlib
 import json
 
@@ -24,70 +23,140 @@ app.add_middleware(
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
     google_api_key=os.getenv("GOOGLE_API_KEY"),
-    temperature=0.7
+    temperature=0.3,
+    max_tokens=150
 )
 
-# Stateful session storage
-user_sessions = {}
-PORTFOLIO_DATA = {}
-CACHE_LAST_FETCH = 0
-CACHE_TTL_SECS = 15 * 60
-response_cache = {}
-RESPONSE_CACHE_TTL = 300
-PORTFOLIO_ETAG = ""
+# Static portfolio data
+PORTFOLIO_DATA = {
+    "name": "Mohamed Aarif A (Aarif)",
+    "role": (
+        "Full-stack Flutter Developer, IoT Innovator, and Problem-Solving Programmer who builds "
+        "polished, high-performance mobile applications and sensor-driven systems using modern, "
+        "scalable engineering practices."
+    ),
+    "tagline": (
+        "Crafting refined cross-platform mobile experiences, intelligent IoT solutions, "
+        "and computationally efficient systems."
+    ),
 
-PORTFOLIO_URL = "https://aarif-work.github.io/html/index.html"
-SKILL_KEYS = ["flutter","dart","python","c++","javascript","mysql","iot","firebase"]
+    "location": "Karaikudi, Tamil Nadu 630001, India",
+    "email": "mohamedaarif1811@gmail.com",
 
-async def fetch_and_cache_portfolio():
-    global PORTFOLIO_DATA, CACHE_LAST_FETCH, PORTFOLIO_ETAG
-    try:
-        headers = {}
-        if PORTFOLIO_ETAG:
-            headers["If-None-Match"] = PORTFOLIO_ETAG
-            
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=6)) as s:
-            async with s.get(PORTFOLIO_URL, headers=headers) as r:
-                if r.status == 304:
-                    return
-                    
-                PORTFOLIO_ETAG = r.headers.get("ETag", "")
-                html = await r.text()
+    "domains": (
+        "• **Mobile Development:** Flutter, Dart, Firebase, cross-platform UI/UX engineering.\n"
+        "• **IoT Engineering:** ESP32, real-time sensor acquisition, pulse analysis, Bluetooth communication, edge computing.\n"
+        "• **Data & Algorithms:** Computational efficiency, optimization, scalable data architecture, error-resilient processing.\n"
+        "• **Systems Thinking:** Combining mobile + hardware + backend to build fully integrated digital ecosystems."
+    ),
 
-        soup = BeautifulSoup(html, "html.parser")
-        
-        skills = []
-        projects = []
-        
-        for elem in soup.find_all(["span", "h3", "h2", "p"]):
-            text = elem.get_text(strip=True)
-            if any(k in text.lower() for k in SKILL_KEYS) and len(text) < 50:
-                skills.append(text)
-            elif any(w in text.lower() for w in ["project", "app"]) and len(text) < 100:
-                projects.append(text)
-                
-        PORTFOLIO_DATA = {
-            "name": "Mohamed Aarif A",
-            "role": "Flutter Developer & Programmer", 
-            "skills": skills[:8] or ["Flutter","Dart","Python","C++"],
-            "projects": projects[:5] or ["Portfolio site"],
-            "fetched_at": int(time.time())
+    "education": (
+        "• Student of the **IIT Madras BS in Data Science & Programming** program (old batch), "
+        "with exposure to computational foundations, mathematical reasoning, data-driven systems, "
+        "and real-world programming practices.\n"
+        "• Developed strong fundamentals in algorithms, data structures, data handling, "
+        "problem solving, and structured system design."
+    ),
+
+    "achievements": (
+        "• Awarded **Grade A** in the *Computational Thinking* course at IIT Madras.\n"
+        "• Received **personal recognition from Prof. V. Kamakoti**, Director of IIT Madras, "
+        "known for his contributions to Computer Architecture, VLSI, and Cybersecurity.\n"
+        "• Built multiple showcased projects in IoT, Flutter, and algorithms that demonstrate "
+        "end-to-end design, engineering rigor, and problem-solving depth."
+    ),
+
+    "personal_strengths": (
+        "• Strong UI/UX intuition — builds clean, modern, user-first interfaces.\n"
+        "• Excellent debugging and analytical skills.\n"
+        "• Passion for learning new technologies quickly.\n"
+        "• Ability to bridge hardware + software — rare combination.\n"
+        "• Loves improving performance, reducing complexity, and writing efficient code."
+    ),
+
+    "tech_stack": {
+        "mobile": "Flutter, Dart, Firebase, Local Storage, Provider/Bloc, REST APIs, Responsive UI/UX",
+        "iot": "ESP32, C/C++, Optical Pulse Sensors, Bluetooth LE, Serial Communication, Embedded Programming",
+        "backend": "Python, Node.js Basics, Flask/FastAPI (learning), MySQL, Firebase Realtime/Firestore",
+        "general": "Git/GitHub, Debugging Tools, VS Code, Circuit Design, Prototyping",
+    },
+
+    "projects": {
+        "flutter_development": {
+            "summary": (
+                "Designs and develops elegant, high-performance mobile applications with clean structure, "
+                "animation-rich UI, and seamless cross-platform behaviour using Flutter and Dart."
+            ),
+            "details": (
+                "• Firebase integration (Auth, Firestore, Realtime DB, Storage)\n"
+                "• Responsive layouts for Android/iOS\n"
+                "• Smooth state management (Provider/Bloc)\n"
+                "• Modern app patterns: MVVM, clean architecture\n"
+                "• Focus on accessibility, UX clarity, and minimalistic design"
+            )
+        },
+
+        "nadi_bio_band": {
+            "summary": (
+                "A flagship IoT wearable project designed to capture and analyze wrist-pulse patterns in real time "
+                "using optical sensors and an ESP32 microcontroller."
+            ),
+            "details": (
+                "• Integrated **optical pulse sensors** to acquire heartbeat/pulse waveform\n"
+                "• **ESP32 firmware** built for accurate sampling and noise-filtered readings\n"
+                "• Real-time data transmission to mobile via **Bluetooth LE**\n"
+                "• Displays analytics, pulse behavior, and insights on-screen\n"
+                "• Designed for **educational, wellness, and research** applications\n"
+                "• Represents Aarif's passion for merging hardware with intuitive software"
+            )
+        },
+
+        "algorithmic_solutions": {
+            "summary": (
+                "A collection of algorithm-focused projects emphasizing computational efficiency, "
+                "fast execution, and structured logic-building."
+            ),
+            "details": (
+                "• Implemented in C/C++, Python, and Rust\n"
+                "• Focuses on performance optimization, complexity reduction, and clean problem-solving patterns\n"
+                "• Includes data handling, modular design, efficient storage, and scalable architecture thinking"
+            )
         }
-        CACHE_LAST_FETCH = PORTFOLIO_DATA["fetched_at"]
-    except Exception:
-        if not PORTFOLIO_DATA:
-            PORTFOLIO_DATA = {
-                "name": "Mohamed Aarif A",
-                "role": "Flutter Developer & Programmer",
-                "skills": ["Flutter","Dart","Python","C++"],
-                "projects": ["Portfolio site"],
-                "fetched_at": int(time.time())
-            }
-            CACHE_LAST_FETCH = PORTFOLIO_DATA["fetched_at"]
+    },
 
-async def ensure_cache():
-    if time.time() - CACHE_LAST_FETCH > CACHE_TTL_SECS or not PORTFOLIO_DATA:
-        await fetch_and_cache_portfolio()
+    "mentors": {
+        "palani_vairavan": (
+            "Engineering Leadership @ Amazon | Formerly AWS & Microsoft Azure | "
+            "Teacher at Hope3 Varsity"
+        ),
+        "siva_kumar": "Leader at Hope3 Foundation, Treasty (Education & Innovation Focus)",
+        "gokul_kittusamy": "CEO of ELARCHITEK, MIT Background, Hardware & Innovation Mentor",
+        "meenakshi_sundaram": "Applied Data Scientist (Semiconductor + Modeling Expertise)",
+        "mani_rr": "Senior Software Engineer and Engineering Mentor"
+    },
+
+    "contact": {
+        "email": "mohamedaarif1811@gmail.com",
+        "location": "Karaikudi, Tamil Nadu, India",
+        "linkedin": "Available on portfolio website",
+        "github": "https://github.com/aarif-work"
+    },
+
+    "about_long": (
+        "I'm **Mohamed Aarif A**, a developer who blends mobile engineering with IoT innovation. "
+        "I specialize in creating seamless, elegant, and high-performance mobile apps in Flutter, "
+        "while also building real-time sensor systems such as the Nadi Bio Band using ESP32 and "
+        "embedded programming. I love solving complex problems through clean architecture, "
+        "mathematical reasoning, and computational efficiency. My education at IIT Madras strengthened "
+        "my analytical foundation and deepened my understanding of algorithms, data structures, "
+        "and structured thinking. My goal is to build meaningful products that merge design, "
+        "technology, and intelligence."
+    )
+}
+
+user_sessions = {}
+response_cache = {}
+RESPONSE_CACHE_TTL = 1800
 
 def get_cache_key(message: str, mode: str) -> str:
     return hashlib.md5(f"{message.lower().strip()}:{mode}".encode()).hexdigest()
@@ -106,19 +175,59 @@ def cache_response(cache_key: str, response: str):
         oldest = min(response_cache.keys(), key=lambda k: response_cache[k][0])
         del response_cache[oldest]
 
-def get_relevant_context(message: str, portfolio_data: dict) -> str:
-    msg_lower = message.lower()
-    context_parts = [f"Name: {portfolio_data['name']}", f"Role: {portfolio_data['role']}"]
-    
-    if any(skill.lower() in msg_lower for skill in portfolio_data['skills']):
-        relevant_skills = [s for s in portfolio_data['skills'] if s.lower() in msg_lower][:3]
-        if relevant_skills:
-            context_parts.append(f"Skills: {', '.join(relevant_skills)}")
-    
-    if any(word in msg_lower for word in ["project", "work", "built", "created"]):
-        context_parts.append(f"Projects: {', '.join(portfolio_data['projects'][:3])}")
-        
-    return "\n".join(context_parts)
+def get_portfolio_context() -> str:
+    return f"""You are Aarif's Portfolio Concierge, a precise, cordial assistant that answers questions about Mohamed Aarif A based solely on the portfolio's content. Speak in concise, confident sentences with professional warmth.
+
+Identity Snapshot:
+Name: {PORTFOLIO_DATA['name']}
+Role: {PORTFOLIO_DATA['role']}
+Tagline: {PORTFOLIO_DATA['tagline']}
+Location: {PORTFOLIO_DATA['location']}
+Contact: {PORTFOLIO_DATA['email']}
+
+Domains:
+{PORTFOLIO_DATA['domains']}
+
+Education:
+{PORTFOLIO_DATA['education']}
+
+Achievements:
+{PORTFOLIO_DATA['achievements']}
+
+Personal Strengths:
+{PORTFOLIO_DATA['personal_strengths']}
+
+Tech Stack:
+- Mobile: {PORTFOLIO_DATA['tech_stack']['mobile']}
+- IoT: {PORTFOLIO_DATA['tech_stack']['iot']}
+- Backend: {PORTFOLIO_DATA['tech_stack']['backend']}
+- General: {PORTFOLIO_DATA['tech_stack']['general']}
+
+Projects:
+- Flutter Development: {PORTFOLIO_DATA['projects']['flutter_development']['summary']}
+  Details: {PORTFOLIO_DATA['projects']['flutter_development']['details']}
+
+- Nadi Bio Band: {PORTFOLIO_DATA['projects']['nadi_bio_band']['summary']}
+  Details: {PORTFOLIO_DATA['projects']['nadi_bio_band']['details']}
+
+- Algorithmic Solutions: {PORTFOLIO_DATA['projects']['algorithmic_solutions']['summary']}
+  Details: {PORTFOLIO_DATA['projects']['algorithmic_solutions']['details']}
+
+Mentors:
+- Palani Vairavan: {PORTFOLIO_DATA['mentors']['palani_vairavan']}
+- Siva Kumar: {PORTFOLIO_DATA['mentors']['siva_kumar']}
+- Gokul Kittusamy: {PORTFOLIO_DATA['mentors']['gokul_kittusamy']}
+- Meenakshi Sundaram: {PORTFOLIO_DATA['mentors']['meenakshi_sundaram']}
+- Mani RR: {PORTFOLIO_DATA['mentors']['mani_rr']}
+
+About:
+{PORTFOLIO_DATA['about_long']}
+
+Answering Policy:
+- If asked anything outside of the site's content, say: "That isn't on the public portfolio, so I can't confirm."
+- Keep responses ≤120 words unless the user asks for more depth
+- Always offer the best next step (e.g., "Email Aarif at mohamedaarif1811@gmail.com")
+- Prefer concrete details from the site; avoid speculation"""
 
 def summarize_old_messages(history: list) -> str:
     if len(history) <= 4:
@@ -153,22 +262,18 @@ async def chat(request: ChatRequest):
                 return StreamingResponse(cached_stream(), media_type="text/plain")
             return {"reply": cached}
         
-        await ensure_cache()
-        
         if request.session_id not in user_sessions:
             user_sessions[request.session_id] = {"history": []}
         session = user_sessions[request.session_id]
         
         if request.mode == "portfolio":
-            context = get_relevant_context(request.message, PORTFOLIO_DATA)
-            system_msg = f"You are Mohamed Aarif A's portfolio assistant. Answer about him using:\n{context}\n\nBe concise and helpful."
+            system_msg = get_portfolio_context()
         else:
             system_msg = "You are a helpful AI assistant. Answer any question clearly and concisely."
         
-        summary = summarize_old_messages(session["history"])
-        recent_context = "\n".join([f"User: {h['user']}\nAI: {h['ai']}" for h in session["history"][-4:]])
+        recent_context = "\n".join([f"User: {h['user']}\nAI: {h['ai']}" for h in session["history"][-2:]])
         
-        full_prompt = f"{system_msg}\n\n{summary}\n{recent_context}\n\nUser: {request.message}\nAI:"
+        full_prompt = f"{system_msg}\n\n{recent_context}\n\nUser: {request.message}\nAI:"
         
         if request.stream:
             async def generate():
